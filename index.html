@@ -1,9 +1,895 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн-запрошення на побачення — створити та надіслати</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pageBg: '#FDFFFF',
+                        primaryText: '#2D1926',
+                        subText: '#80757B',
+                        pinkAccent: '#F85589',
+                        pinkHover: '#e03e73',
+                        pinkBorder: '#FBCCDC',
+                        badgeHerBg: '#FFE8EF',
+                        badgeHimBg: '#F0F8FD',
+                        badgeHimText: '#5786BA',
+                    },
+                    fontFamily: {
+                        sans: ['Comfortaa', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #FDFFFF;
+            color: #2D1926;
+            font-family: 'Comfortaa', sans-serif;
+            overflow-x: hidden;
+        }
+        .title-font {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            line-height: 0.92;
+            letter-spacing: -0.03em;
+        }
+        /* Смугаста доріжка прогресу як в оригіналі */
+        .progress-rail {
+            background: repeating-linear-gradient(-45deg, #f3ccd5 0 3px, #fef1f8 3px 8px);
+            box-shadow: inset 0 0 0 1px rgba(243, 204, 213, 0.7);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes floatHeart {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-6px) scale(1.08); }
+        }
+        .animate-float {
+            animation: floatHeart 2.8s ease-in-out infinite;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-enter {
+            animation: fadeIn 0.32s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-pinkAccent selection:text-white">
+
+    <!-- Канвас для святкового салюту з сердечок -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Верхня панель з логотипом та прогрес-баром -->
+    <header id="main-header" class="w-full pt-5 pb-2 px-4 max-w-5xl mx-auto">
+        <div class="flex flex-col items-center">
+            <!-- Логотип -->
+            <button type="button" onclick="resetToLanding()" class="flex items-center gap-2.5 group focus:outline-none">
+                <div class="w-9 h-9 rounded-full bg-badgeHerBg flex items-center justify-center text-pinkAccent shadow-sm group-hover:scale-110 transition">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                </div>
+                <span class="title-font text-xl sm:text-2xl tracking-tight text-primaryText">
+                    ТІЛЬКИ<span class="text-pinkAccent">ТЕПЛО</span>
+                </span>
+            </button>
+
+            <!-- Прогрес-бар із сердечком (клікабельний по кроках) -->
+            <div id="progress-container" class="w-full max-w-xl mt-5 px-3">
+                <div class="relative h-10 flex items-center">
+                    <div class="w-full h-2.5 rounded-full progress-rail"></div>
+                    <div id="progress-bar-fill" class="absolute left-0 h-2.5 rounded-full bg-pinkAccent transition-all duration-500" style="width: 12%;"></div>
+                    <div id="progress-heart" class="absolute top-1/2 -translate-y-1/2 -ml-4 w-9 h-9 rounded-full bg-pinkAccent text-white flex items-center justify-center shadow-md shadow-pinkAccent/40 transition-all duration-500" style="left: 12%;">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex justify-between text-[11px] font-bold text-subText px-1 -mt-1">
+                    <button type="button" onclick="goToStep(1)" id="step-label-1" class="text-pinkAccent hover:underline">1. Старт</button>
+                    <button type="button" onclick="goToStep(2)" id="step-label-2" class="hover:underline">2. Хто і кому</button>
+                    <button type="button" onclick="goToStep(3)" id="step-label-3" class="hover:underline">3. Формат</button>
+                    <button type="button" onclick="goToStep(4)" id="step-label-4" class="hover:underline">4. Коли і де</button>
+                    <button type="button" onclick="goToStep(5)" id="step-label-5" class="hover:underline">5. Готово!</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основний робочий простір (2 колонки: Телефон + Конструктор) -->
+    <main id="constructor-workspace" class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 md:py-8 flex flex-col md:flex-row items-center md:items-start gap-8 lg:gap-12">
+        
+        <!-- Ліва колонка: Інтерактивний макет смартфона -->
+        <div class="w-full max-w-[346px] flex-shrink-0 md:sticky md:top-6 order-2 md:order-1">
+            <div class="text-center mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-pinkAccent bg-badgeHerBg px-3 py-1 rounded-full">
+                    📱 Живий попередній перегляд
+                </span>
+            </div>
+            <div class="rounded-[2.6rem] border-[8px] border-pinkBorder bg-white shadow-xl overflow-hidden relative aspect-[346/590] flex flex-col justify-between">
+                <!-- Верхній динамік смартфона -->
+                <div class="pt-3 pb-2 px-6 flex justify-between items-center bg-gradient-to-b from-pink-50/70 to-transparent z-10">
+                    <span class="text-[11px] font-bold text-subText">19:00</span>
+                    <div class="w-16 h-4 bg-pinkBorder/70 rounded-full"></div>
+                    <span class="text-[11px] font-bold text-pinkAccent">5G ❤️</span>
+                </div>
+
+                <!-- Екран смартфона (динамічно оновлюється) -->
+                <div id="phone-screen-content" class="flex-1 overflow-y-auto no-scrollbar px-5 py-3 flex flex-col justify-between text-center relative">
+                    <!-- Заповнюється через JS -->
+                </div>
+
+                <!-- Нижня риска смартфона -->
+                <div class="py-2.5 bg-white flex justify-center border-t border-pink-50">
+                    <div class="w-28 h-1.5 bg-pinkBorder rounded-full"></div>
+                </div>
+            </div>
+            <p class="text-center text-xs text-subText mt-2.5">
+                💡 Натискай кнопки «Так» або «Подумаю» прямо на екрані смартфона!
+            </p>
+        </div>
+
+        <!-- Права колонка: Кроки конструктора -->
+        <div class="flex-1 w-full order-1 md:order-2 flex flex-col justify-center min-h-[460px]">
+
+            <!-- КРОК 1: Головний екран (Лендінг) -->
+            <section id="step-1" class="step-panel step-enter flex flex-col items-center md:items-start text-center md:text-left my-auto py-4">
+                <h1 class="title-font text-[42px] sm:text-[54px] text-[#222222] mb-5 select-none">
+                    <span class="block">онлайн-</span>
+                    <span class="block">запрошення</span>
+                    <span class="block text-pinkAccent mt-1">на побачення</span>
+                </h1>
+
+                <!-- Перемикач Для неї / Для нього -->
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mb-5">
+                    <button type="button" onclick="setAudience('her')" id="btn-aud-her" class="title-font text-sm px-4 py-2.5 rounded-full bg-badgeHerBg text-pinkAccent ring-2 ring-pinkAccent transition flex items-center gap-1.5">
+                        <span>🌸 для неї</span>
+                    </button>
+                    <button type="button" onclick="setAudience('him')" id="btn-aud-him" class="title-font text-sm px-4 py-2.5 rounded-full bg-badgeHimBg text-badgeHimText opacity-75 hover:opacity-100 transition flex items-center gap-1.5">
+                        <span>💙 і для нього</span>
+                    </button>
+                </div>
+
+                <p class="text-subText text-base sm:text-lg font-semibold max-w-md mb-8 leading-relaxed">
+                    Створи миле інтерактивне запрошення на побачення за хвилину та надішли людині, яка тобі дорога ❤️
+                </p>
+
+                <div class="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+                    <button type="button" onclick="goToStep(2)" class="w-full sm:w-auto bg-pinkAccent hover:bg-pinkHover text-white font-bold text-base px-8 h-[64px] rounded-full shadow-lg shadow-pinkAccent/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        <span>Створити запрошення 💌</span>
+                    </button>
+                    <button type="button" onclick="openRecipientModal()" class="w-full sm:w-auto bg-badgeHerBg hover:bg-pinkBorder/60 text-primaryText font-bold text-sm px-6 h-[64px] rounded-full transition flex items-center justify-center gap-2">
+                        <span>Переглянути на весь екран 👀</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- КРОК 2: Кого запрошуємо? -->
+            <section id="step-2" class="step-panel hidden step-enter bg-white border-2 border-pinkBorder/70 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pinkAccent bg-badgeHerBg px-3 py-1 rounded-full">Крок 2 із 5</span>
+                    <button type="button" onclick="goToStep(1)" class="text-xs text-subText hover:text-primaryText font-bold">← На головну</button>
+                </div>
+                <h2 class="title-font text-2xl sm:text-3xl text-primaryText mb-2">Кого запрошуємо? 🥰</h2>
+                <p class="text-xs sm:text-sm text-subText mb-6">Впиши імена та теплі слова для своєї другої половинки.</p>
+
+                <div class="space-y-4">
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-primaryText mb-1.5">Ім'я коханої людини (кому):</label>
+                            <input type="text" id="input-to" oninput="updateStateFromInputs()" placeholder="Наприклад: Софійко" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-primaryText mb-1.5">Твоє ім'я (від кого):</label>
+                            <input type="text" id="input-from" oninput="updateStateFromInputs()" placeholder="Наприклад: Твій Макс" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                        </div>
+                    </div>
+
+                    <!-- Швидкі шаблони тексту -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-xs font-bold text-primaryText">Персональне звернення:</label>
+                            <span class="text-[11px] text-pinkAccent font-bold">Готові ідеї 👇</span>
+                        </div>
+                        <textarea id="input-message" rows="2" oninput="updateStateFromInputs()" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-2.5 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg"></textarea>
+                        <div class="flex flex-wrap gap-1.5 mt-2">
+                            <button type="button" onclick="setPresetMessage('Хочу провести цей вечір тільки з тобою та подарувати тобі найтепліші емоції ✨')" class="text-[11px] bg-badgeHerBg hover:bg-pinkBorder text-primaryText px-3 py-1.5 rounded-full transition">✨ Романтичне</button>
+                            <button type="button" onclick="setPresetMessage('Давай втечемо від усіх справ, питимемо смачну каву і багато сміятимемось ☕❤️')" class="text-[11px] bg-badgeHerBg hover:bg-pinkBorder text-primaryText px-3 py-1.5 rounded-full transition">☕ Затишне</button>
+                            <button type="button" onclick="setPresetMessage('Маю для тебе секретний план на вечір! Обіцяю, тобі точно сподобається 🔥')" class="text-[11px] bg-badgeHerBg hover:bg-pinkBorder text-primaryText px-3 py-1.5 rounded-full transition">🔥 Інтригуюче</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-7 flex justify-end">
+                    <button type="button" onclick="goToStep(3)" class="w-full sm:w-auto bg-pinkAccent hover:bg-pinkHover text-white font-bold px-8 py-4 rounded-full shadow-md shadow-pinkAccent/25 transition">
+                        Далі: Формат побачення →
+                    </button>
+                </div>
+            </section>
+
+            <!-- КРОК 3: Формат та атмосфера побачення -->
+            <section id="step-3" class="step-panel hidden step-enter bg-white border-2 border-pinkBorder/70 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pinkAccent bg-badgeHerBg px-3 py-1 rounded-full">Крок 3 із 5</span>
+                    <button type="button" onclick="goToStep(2)" class="text-xs text-subText hover:text-primaryText font-bold">← Назад</button>
+                </div>
+                <h2 class="title-font text-2xl sm:text-3xl text-primaryText mb-2">Формат та програма ✨</h2>
+                <p class="text-xs sm:text-sm text-subText mb-5">Обери головний настрій та чим ви будете займатися:</p>
+
+                <!-- Вибір вайбу -->
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-primaryText mb-2">Головна атмосфера:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="vibe-selector">
+                        <button type="button" onclick="selectVibe('☕ Кава та десерти')" data-vibe="☕ Кава та десерти" class="vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition">
+                            <div class="text-xl mb-1">☕🍰</div>
+                            <div class="text-xs font-bold">Кава та десерти</div>
+                        </button>
+                        <button type="button" onclick="selectVibe('🍷 Романтична вечеря')" data-vibe="🍷 Романтична вечеря" class="vibe-btn p-3 rounded-2xl border-2 border-pinkAccent bg-badgeHerBg text-center transition">
+                            <div class="text-xl mb-1">🍷🕯️</div>
+                            <div class="text-xs font-bold">Романтична вечеря</div>
+                        </button>
+                        <button type="button" onclick="selectVibe('🌆 Вечірня прогулянка')" data-vibe="🌆 Вечірня прогулянка" class="vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition">
+                            <div class="text-xl mb-1">🌆✨</div>
+                            <div class="text-xs font-bold">Вечірня прогулянка</div>
+                        </button>
+                        <button type="button" onclick="selectVibe('🍿 Кіно та попкорн')" data-vibe="🍿 Кіно та попкорн" class="vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition">
+                            <div class="text-xl mb-1">🍿🎬</div>
+                            <div class="text-xs font-bold">Кіно та попкорн</div>
+                        </button>
+                        <button type="button" onclick="selectVibe('🎳 Активний драйв')" data-vibe="🎳 Активний драйв" class="vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition">
+                            <div class="text-xl mb-1">🎳🏎️</div>
+                            <div class="text-xs font-bold">Активний драйв</div>
+                        </button>
+                        <button type="button" onclick="selectVibe('🎁 Таємний сюрприз')" data-vibe="🎁 Таємний сюрприз" class="vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition">
+                            <div class="text-xl mb-1">🎁🤫</div>
+                            <div class="text-xs font-bold">Сюрприз</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-primaryText mb-2">Додаткові приємності у програмі (можна кілька):</label>
+                    <div id="activities-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <!-- Заповнюється через JS -->
+                    </div>
+                </div>
+
+                <div class="mt-7 flex justify-between items-center gap-3">
+                    <button type="button" onclick="goToStep(2)" class="px-5 py-3.5 rounded-full border-2 border-pinkBorder text-xs font-bold text-subText hover:text-primaryText transition">
+                        Назад
+                    </button>
+                    <button type="button" onclick="goToStep(4)" class="flex-1 sm:flex-initial bg-pinkAccent hover:bg-pinkHover text-white font-bold px-8 py-4 rounded-full shadow-md shadow-pinkAccent/25 transition">
+                        Далі: Дата та місце →
+                    </button>
+                </div>
+            </section>
+
+            <!-- КРОК 4: Дата, Час, Місце та Дрес-код -->
+            <section id="step-4" class="step-panel hidden step-enter bg-white border-2 border-pinkBorder/70 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pinkAccent bg-badgeHerBg px-3 py-1 rounded-full">Крок 4 із 5</span>
+                    <button type="button" onclick="goToStep(3)" class="text-xs text-subText hover:text-primaryText font-bold">← Назад</button>
+                </div>
+                <h2 class="title-font text-2xl sm:text-3xl text-primaryText mb-2">Коли та де зустрінемось? 📍</h2>
+                <p class="text-xs sm:text-sm text-subText mb-5">Вкажи дату, час і місце або залиш інтригу.</p>
+
+                <div class="space-y-4">
+                    <!-- Швидкий вибір дня -->
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setQuickDate(0)" class="text-xs bg-badgeHerBg hover:bg-pinkBorder text-pinkAccent font-bold px-3.5 py-1.5 rounded-full transition">🔥 Сьогодні ввечері</button>
+                        <button type="button" onclick="setQuickDate(1)" class="text-xs bg-badgeHerBg hover:bg-pinkBorder text-pinkAccent font-bold px-3.5 py-1.5 rounded-full transition">✨ Завтра</button>
+                        <button type="button" onclick="setWeekendDate()" class="text-xs bg-badgeHerBg hover:bg-pinkBorder text-pinkAccent font-bold px-3.5 py-1.5 rounded-full transition">🥂 Цими вихідними</button>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-primaryText mb-1.5">📅 Дата зустрічі:</label>
+                            <input type="date" id="input-date" onchange="updateStateFromInputs()" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-primaryText mb-1.5">⏰ Час:</label>
+                            <input type="time" id="input-time" onchange="updateStateFromInputs()" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-primaryText mb-1.5">📍 Місце зустрічі або заклад:</label>
+                        <input type="text" id="input-place" oninput="updateStateFromInputs()" placeholder="Наприклад: Кав'ярня на Подолі / Біля фонтану" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="setPlacePreset('🤫 Це сюрприз! Надішлю геолокацію перед виходом')" class="text-xs bg-badgeHerBg hover:bg-pinkBorder text-pinkAccent font-bold px-3 py-1.5 rounded-full transition">
+                                🎁 Тримати місце в секреті
+                            </button>
+                            <button type="button" onclick="setPlacePreset('🚗 Заїду за тобою просто до дому')" class="text-xs bg-badgeHimBg hover:bg-sky-100 text-badgeHimText font-bold px-3 py-1.5 rounded-full transition">
+                                🚗 Заїду за тобою
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-primaryText mb-1.5">👗 Побажання або дрес-код (за бажанням):</label>
+                        <input type="text" id="input-dress" oninput="updateStateFromInputs()" placeholder="Наприклад: Одягайся тепло та зручно ❤️" class="w-full rounded-2xl border-2 border-pinkBorder px-4 py-3 text-sm focus:outline-none focus:border-pinkAccent bg-pageBg">
+                    </div>
+                </div>
+
+                <div class="mt-7 flex justify-between items-center gap-3">
+                    <button type="button" onclick="goToStep(3)" class="px-5 py-3.5 rounded-full border-2 border-pinkBorder text-xs font-bold text-subText hover:text-primaryText transition">
+                        Назад
+                    </button>
+                    <button type="button" onclick="goToStep(5)" class="flex-1 sm:flex-initial bg-pinkAccent hover:bg-pinkHover text-white font-bold px-8 py-4 rounded-full shadow-md shadow-pinkAccent/25 transition">
+                        Готово: Надіслати запрошення 💌
+                    </button>
+                </div>
+            </section>
+
+            <!-- КРОК 5: Фінальний крок — Відправка та Завантаження -->
+            <section id="step-5" class="step-panel hidden step-enter bg-white border-2 border-pinkBorder/70 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
+                <div class="w-16 h-16 rounded-full bg-badgeHerBg text-pinkAccent flex items-center justify-center text-3xl mx-auto mb-3 animate-float">
+                    💝
+                </div>
+                <h2 class="title-font text-2xl sm:text-3xl text-primaryText mb-2">Запрошення створено!</h2>
+                <p class="text-xs sm:text-sm text-subText max-w-md mx-auto mb-6">
+                    Обери зручний спосіб поділитися запрошенням зі своєю другою половинкою:
+                </p>
+
+                <!-- Головні кнопки: Відкрити повноекранну листівку або Завантажити HTML-файл -->
+                <div class="grid sm:grid-cols-2 gap-3 mb-5">
+                    <button type="button" onclick="openRecipientModal()" class="w-full bg-pinkAccent hover:bg-pinkHover text-white font-bold text-xs sm:text-sm py-4 px-5 rounded-2xl transition flex items-center justify-center gap-2 shadow-lg shadow-pinkAccent/30">
+                        <span>👀 Відкрити очима партнера</span>
+                    </button>
+                    <button type="button" onclick="downloadStandaloneInvitation()" class="w-full bg-primaryText hover:bg-slate-800 text-white font-bold text-xs sm:text-sm py-4 px-5 rounded-2xl transition flex items-center justify-center gap-2 shadow-md">
+                        <span>💾 Завантажити листівку (.html)</span>
+                    </button>
+                </div>
+
+                <!-- Копіювання красивого тексту для Telegram / Instagram / Viber -->
+                <div class="bg-badgeHerBg/50 border-2 border-pinkBorder rounded-2xl p-4 text-left mb-5">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-primaryText">💬 Готове повідомлення для Telegram / Instagram:</span>
+                        <button type="button" onclick="copyInviteText()" class="bg-pinkAccent hover:bg-pinkHover text-white text-xs font-bold px-3.5 py-1.5 rounded-full transition">
+                            Скопіювати текст
+                        </button>
+                    </div>
+                    <pre id="preview-text-box" class="text-xs text-subText whitespace-pre-wrap font-sans bg-white/80 p-3 rounded-xl border border-pinkBorder/60"></pre>
+                </div>
+
+                <!-- Посилання для власного хостингу -->
+                <div class="bg-pageBg border border-pinkBorder rounded-2xl p-3 text-left mb-5">
+                    <div class="text-[11px] font-bold text-subText mb-1.5">
+                        🔗 Посилання з параметрами (працює при розміщенні файлу на GitHub Pages / хостингу):
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center gap-2">
+                        <input type="text" id="share-url-input" readonly class="w-full bg-white border border-pinkBorder rounded-xl text-xs text-subText font-semibold px-3 py-2 focus:outline-none select-all">
+                        <button type="button" onclick="copyShareLink()" class="w-full sm:w-auto flex-shrink-0 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                            📋 Копіювати URL
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" onclick="goToStep(2)" class="text-xs font-bold text-subText hover:text-pinkAccent underline">
+                    ✏️ Повернутися та змінити деталі
+                </button>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Повноекранний режим перегляду очима отримувача (Інтерактивна листівка без перезавантаження сторінки) -->
+    <div id="recipient-modal" class="fixed inset-0 z-40 hidden bg-gradient-to-b from-[#FFF5F8] to-[#FDFFFF] overflow-y-auto p-4 flex flex-col items-center justify-between">
+        <!-- Верхня плаваюча панель повернення до конструктора -->
+        <div class="w-full max-w-md flex justify-between items-center py-2 px-3 bg-white/80 backdrop-blur-md rounded-full border border-pinkBorder shadow-sm mt-1">
+            <span class="text-xs font-bold text-pinkAccent flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-pinkAccent animate-ping"></span>
+                Режим отримувача (очима партнера)
+            </span>
+            <button type="button" onclick="closeRecipientModal()" class="text-xs font-bold bg-badgeHerBg hover:bg-pinkBorder text-primaryText px-3.5 py-1.5 rounded-full transition">
+                ← В конструктор
+            </button>
+        </div>
+
+        <!-- Сама картка запрошення -->
+        <div class="max-w-md w-full bg-white rounded-[2.6rem] border-[8px] border-pinkBorder shadow-2xl p-6 sm:p-8 text-center relative my-6">
+            <div id="recipient-card-body">
+                <!-- Заповнюється динамічно -->
+            </div>
+        </div>
+
+        <div class="text-xs text-subText pb-2">
+            ТІЛЬКИ<span class="text-pinkAccent font-bold">ТЕПЛО</span> • Онлайн-запрошення на побачення
+        </div>
+    </div>
+
+    <!-- Спливаюче повідомлення (Toast) -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 bg-primaryText text-white text-xs sm:text-sm font-bold px-6 py-3.5 rounded-full shadow-xl flex items-center gap-2">
+        <span>✨</span>
+        <span id="toast-text">Скопійовано!</span>
+    </div>
+
+    <!-- Футер -->
+    <footer class="text-center text-xs text-subText py-5 border-t border-pinkBorder/40 mt-6">
+        Зроблено з любов'ю ❤️ Український конструктор романтичних запрошень
+    </footer>
+
+    <script>
+        // Доступні активності
+        const ALL_ACTIVITIES = [
+            { id: 'coffee', label: 'Кава та смаколики', icon: '☕' },
+            { id: 'walk', label: 'Вечірній променад', icon: '🌙' },
+            { id: 'dinner', label: 'Смачна вечеря', icon: '🍝' },
+            { id: 'cinema', label: 'Кіно або серіал', icon: '🍿' },
+            { id: 'drive', label: 'Поїздка нічним містом', icon: '🚘' },
+            { id: 'photos', label: 'Спільні фото на згадку', icon: '📸' }
+        ];
+
+        // Грайливі фрази для кнопки "Подумаю 🤔"
+        const NO_BUTTON_PHRASES = [
+            'Точно-точно подумаєш? 🥺',
+            'А якщо зі смачним десертом? 🍰',
+            'Обіцяю, буде дуже класно! ✨',
+            'Спробуй натиснути рожеву кнопку 👉👈',
+            'Кнопка «Подумаю» сьогодні у відпустці 🏖️',
+            'Ну будь ласочка, погоджуйся! ❤️'
+        ];
+
+        // Стан додатку
+        let state = {
+            step: 1,
+            audience: 'her',
+            toName: 'Софійко',
+            fromName: 'Твій Макс',
+            vibe: '🍷 Романтична вечеря',
+            message: 'Хочу провести цей вечір тільки з тобою та подарувати тобі найтепліші емоції ✨',
+            date: getOffsetDate(1),
+            time: '19:00',
+            place: 'Затишний ресторанчик у центрі',
+            activities: ['coffee', 'walk', 'dinner'],
+            dressCode: 'Одягай те, в чому почуваєшся неперевершено ❤️',
+            accepted: false,
+            noClickCount: 0
+        };
+
+        function getOffsetDate(days) {
+            const d = new Date();
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        function setQuickDate(daysOffset) {
+            state.date = getOffsetDate(daysOffset);
+            document.getElementById('input-date').value = state.date;
+            updateStateFromInputs();
+        }
+
+        function setWeekendDate() {
+            const d = new Date();
+            const day = d.getDay();
+            const diffToSaturday = (6 - day + 7) % 7 || 7;
+            d.setDate(d.getDate() + diffToSaturday);
+            state.date = d.toISOString().split('T')[0];
+            document.getElementById('input-date').value = state.date;
+            updateStateFromInputs();
+        }
+
+        function formatUkrainianDate(dateStr) {
+            if (!dateStr) return 'Найближчим часом';
+            try {
+                const parts = dateStr.split('-');
+                const date = new Date(parts[0], parts[1] - 1, parts[2]);
+                return date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', weekday: 'long' });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        // Ініціалізація
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromUrlParams();
+            syncInputsWithState();
+            renderActivitiesGrid();
+            renderPhonePreview();
+            updateProgressUI();
+            updateShareData();
+        });
+
+        function syncInputsWithState() {
+            document.getElementById('input-to').value = state.toName;
+            document.getElementById('input-from').value = state.fromName;
+            document.getElementById('input-message').value = state.message;
+            document.getElementById('input-date').value = state.date;
+            document.getElementById('input-time').value = state.time;
+            document.getElementById('input-place').value = state.place;
+            document.getElementById('input-dress').value = state.dressCode;
+            updateAudienceButtons();
+            updateVibeButtons();
+        }
+
+        function updateStateFromInputs() {
+            state.toName = document.getElementById('input-to').value.trim() || 'Кохана людина';
+            state.fromName = document.getElementById('input-from').value.trim() || 'Таємний шанувальник';
+            state.message = document.getElementById('input-message').value.trim();
+            state.date = document.getElementById('input-date').value;
+            state.time = document.getElementById('input-time').value;
+            state.place = document.getElementById('input-place').value.trim() || 'Секретне місце';
+            state.dressCode = document.getElementById('input-dress').value.trim();
+            state.accepted = false;
+            renderPhonePreview();
+            updateShareData();
+        }
+
+        function setAudience(aud) {
+            state.audience = aud;
+            if (aud === 'her' && (state.toName === 'Андрію' || state.toName === 'Коханий')) {
+                state.toName = 'Софійко';
+                state.fromName = 'Твій Макс';
+            } else if (aud === 'him' && (state.toName === 'Софійко' || state.toName === 'Кохана')) {
+                state.toName = 'Андрію';
+                state.fromName = 'Твоя Аня';
+            }
+            syncInputsWithState();
+            renderPhonePreview();
+            updateShareData();
+        }
+
+        function updateAudienceButtons() {
+            const herBtn = document.getElementById('btn-aud-her');
+            const himBtn = document.getElementById('btn-aud-him');
+            if (state.audience === 'her') {
+                herBtn.classList.add('ring-2', 'ring-pinkAccent', 'opacity-100');
+                himBtn.classList.remove('ring-2', 'ring-badgeHimText');
+                himBtn.classList.add('opacity-75');
+            } else {
+                himBtn.classList.add('ring-2', 'ring-badgeHimText', 'opacity-100');
+                himBtn.classList.remove('opacity-75');
+                herBtn.classList.remove('ring-2', 'ring-pinkAccent');
+                herBtn.classList.add('opacity-75');
+            }
+        }
+
+        function setPresetMessage(msg) {
+            document.getElementById('input-message').value = msg;
+            updateStateFromInputs();
+        }
+
+        function setPlacePreset(placeText) {
+            document.getElementById('input-place').value = placeText;
+            updateStateFromInputs();
+        }
+
+        function selectVibe(vibe) {
+            state.vibe = vibe;
+            updateVibeButtons();
+            renderPhonePreview();
+            updateShareData();
+        }
+
+        function updateVibeButtons() {
+            document.querySelectorAll('.vibe-btn').forEach(btn => {
+                if (btn.dataset.vibe === state.vibe) {
+                    btn.className = 'vibe-btn p-3 rounded-2xl border-2 border-pinkAccent bg-badgeHerBg text-center transition shadow-sm';
+                } else {
+                    btn.className = 'vibe-btn p-3 rounded-2xl border-2 border-pinkBorder bg-white hover:bg-pink-50/40 text-center transition';
+                }
+            });
+        }
+
+        function renderActivitiesGrid() {
+            const container = document.getElementById('activities-grid');
+            container.innerHTML = ALL_ACTIVITIES.map(act => {
+                const active = state.activities.includes(act.id);
+                return `
+                    <button type="button" onclick="toggleActivity('${act.id}')"
+                        class="p-2.5 rounded-2xl border-2 text-left transition flex items-center gap-2 ${active ? 'border-pinkAccent bg-badgeHerBg shadow-sm' : 'border-pinkBorder bg-white hover:bg-pink-50/30'}">
+                        <span class="text-lg">${act.icon}</span>
+                        <span class="text-xs font-bold leading-tight">${act.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleActivity(id) {
+            const idx = state.activities.indexOf(id);
+            if (idx > -1) {
+                if (state.activities.length > 1) state.activities.splice(idx, 1);
+            } else {
+                state.activities.push(id);
+            }
+            renderActivitiesGrid();
+            renderPhonePreview();
+            updateShareData();
+        }
+
+        function goToStep(stepNum) {
+            state.step = stepNum;
+            document.querySelectorAll('.step-panel').forEach((el, index) => {
+                if (index + 1 === stepNum) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            updateProgressUI();
+            updateShareData();
+            renderPhonePreview();
+        }
+
+        function resetToLanding() {
+            state.accepted = false;
+            state.noClickCount = 0;
+            closeRecipientModal();
+            goToStep(1);
+        }
+
+        function updateProgressUI() {
+            const percents = { 1: 12, 2: 32, 3: 55, 4: 78, 5: 100 };
+            const pct = percents[state.step] || 12;
+            document.getElementById('progress-bar-fill').style.width = pct + '%';
+            document.getElementById('progress-heart').style.left = pct + '%';
+
+            for (let i = 1; i <= 5; i++) {
+                const lbl = document.getElementById('step-label-' + i);
+                if (i <= state.step) {
+                    lbl.classList.add('text-pinkAccent');
+                } else {
+                    lbl.classList.remove('text-pinkAccent');
+                }
+            }
+        }
+
+        // Побудова картки запрошення
+        function buildInvitationHTML() {
+            const selectedActs = ALL_ACTIVITIES.filter(a => state.activities.includes(a.id));
+            const actsBadges = selectedActs.map(a =>
+                `<span class="inline-flex items-center gap-1 bg-white border border-pinkBorder px-2.5 py-1 rounded-full text-[11px] font-bold text-primaryText shadow-sm">${a.icon} ${a.label}</span>`
+            ).join('');
+
+            if (state.accepted) {
+                return `
+                    <div class="my-auto py-4 space-y-4 step-enter">
+                        <div class="w-16 h-16 rounded-full bg-badgeHerBg text-pinkAccent flex items-center justify-center text-3xl mx-auto animate-bounce">
+                            🥰
+                        </div>
+                        <span class="inline-block bg-green-100 text-green-700 text-[11px] font-bold px-3 py-1 rounded-full">
+                            Ура! Побачення офіційно заплановано! ❤️
+                        </span>
+                        <h3 class="title-font text-2xl text-primaryText">До зустрічі, ${escapeHtml(state.toName)}!</h3>
+                        <p class="text-xs text-subText">Це буде незабутній час разом ✨</p>
+                        
+                        <div class="bg-badgeHerBg/60 border-2 border-pinkBorder rounded-2xl p-4 text-left space-y-2 text-xs">
+                            <div><span class="font-bold text-pinkAccent">📅 Коли:</span> ${formatUkrainianDate(state.date)} о ${escapeHtml(state.time)}</div>
+                            <div><span class="font-bold text-pinkAccent">📍 Де:</span> ${escapeHtml(state.place)}</div>
+                            <div><span class="font-bold text-pinkAccent">✨ Формат:</span> ${escapeHtml(state.vibe)}</div>
+                            ${state.dressCode ? `<div><span class="font-bold text-pinkAccent">💡 Побажання:</span> ${escapeHtml(state.dressCode)}</div>` : ''}
+                            <div class="pt-1 border-t border-pinkBorder/60 text-right font-bold text-primaryText">З любов'ю, ${escapeHtml(state.fromName)} 💌</div>
+                        </div>
+
+                        <div class="pt-1 space-y-2">
+                            <button type="button" onclick="copyAcceptedReply()" class="w-full bg-pinkAccent hover:bg-pinkHover text-white font-bold text-xs py-3 px-4 rounded-full shadow-md transition">
+                                💬 Скопіювати відповідь «Я згодна / згоден! ❤️»
+                            </button>
+                            <button type="button" onclick="resetInviteResponse()" class="text-[11px] text-subText underline hover:text-pinkAccent block mx-auto">
+                                🔄 Скинути відповідь
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const noBtnLabel = state.noClickCount === 0
+                ? 'Подумаю 🤔'
+                : NO_BUTTON_PHRASES[(state.noClickCount - 1) % NO_BUTTON_PHRASES.length];
+
+            const yesScale = Math.min(1 + state.noClickCount * 0.04, 1.18);
+
+            return `
+                <div class="my-auto py-2 flex flex-col justify-between h-full space-y-3">
+                    <div>
+                        <span class="inline-block bg-badgeHerBg text-pinkAccent text-[11px] font-bold px-3 py-1 rounded-full mb-2">
+                            ${escapeHtml(state.vibe)}
+                        </span>
+                        <h3 class="title-font text-2xl text-primaryText leading-tight">
+                            ${escapeHtml(state.toName)}, підемо на <span class="text-pinkAccent">побачення?</span>
+                        </h3>
+                        <p class="text-xs text-subText mt-2 leading-relaxed italic">
+                            «${escapeHtml(state.message)}»
+                        </p>
+                    </div>
+
+                    <!-- Картка деталей -->
+                    <div class="bg-pink-50/60 border border-pinkBorder rounded-2xl p-3.5 text-left space-y-2 text-xs">
+                        <div class="flex items-start gap-2">
+                            <span>📅</span>
+                            <div>
+                                <div class="text-[10px] text-subText font-bold uppercase">Дата та час</div>
+                                <div class="font-bold text-primaryText">${formatUkrainianDate(state.date)} о ${escapeHtml(state.time)}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span>📍</span>
+                            <div>
+                                <div class="text-[10px] text-subText font-bold uppercase">Місце зустрічі</div>
+                                <div class="font-bold text-primaryText">${escapeHtml(state.place)}</div>
+                            </div>
+                        </div>
+                        ${state.dressCode ? `
+                        <div class="flex items-start gap-2">
+                            <span>💡</span>
+                            <div>
+                                <div class="text-[10px] text-subText font-bold uppercase">Деталь</div>
+                                <div class="font-bold text-primaryText">${escapeHtml(state.dressCode)}</div>
+                            </div>
+                        </div>` : ''}
+                    </div>
+
+                    <!-- Активності -->
+                    <div>
+                        <div class="text-[10px] font-bold uppercase text-subText mb-1.5">У програмі вечора:</div>
+                        <div class="flex flex-wrap justify-center gap-1.5">
+                            ${actsBadges}
+                        </div>
+                    </div>
+
+                    <!-- Інтерактивні кнопки Так / Ні -->
+                    <div class="pt-2 space-y-2">
+                        <div class="text-[11px] font-bold text-subText">Запрошує: <span class="text-primaryText">${escapeHtml(state.fromName)} ❤️</span></div>
+                        <div class="flex flex-col gap-2">
+                            <button type="button" onclick="acceptInvitation()" style="transform: scale(${yesScale})" class="w-full bg-pinkAccent hover:bg-pinkHover text-white font-bold text-xs sm:text-sm py-3.5 px-4 rounded-full shadow-md shadow-pinkAccent/30 transition">
+                                Так, із задоволенням! ❤️
+                            </button>
+                            <button type="button" onclick="dodgeNoButton()" class="w-full bg-slate-200/80 hover:bg-slate-300 text-primaryText font-bold text-xs py-2.5 px-4 rounded-full transition">
+                                ${noBtnLabel}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPhonePreview() {
+            const html = buildInvitationHTML();
+            const phoneScreen = document.getElementById('phone-screen-content');
+            if (phoneScreen) phoneScreen.innerHTML = html;
+            const modalBody = document.getElementById('recipient-card-body');
+            if (modalBody) modalBody.innerHTML = html;
+        }
+
+        function dodgeNoButton() {
+            state.noClickCount += 1;
+            renderPhonePreview();
+        }
+
+        function acceptInvitation() {
+            state.accepted = true;
+            renderPhonePreview();
+            launchHeartsConfetti();
+        }
+
+        function resetInviteResponse() {
+            state.accepted = false;
+            state.noClickCount = 0;
+            renderPhonePreview();
+        }
+
+        function copyAcceptedReply() {
+            const reply = `Я з задоволенням приймаю твоє запрошення на побачення (${formatUkrainianDate(state.date)} о ${state.time})! До зустрічі ❤️🥰`;
+            copyTextToClipboard(reply, 'Відповідь скопійовано! Надішли її партнеру ❤️');
+        }
+
+        function openRecipientModal() {
+            state.accepted = false;
+            state.noClickCount = 0;
+            document.getElementById('recipient-modal').classList.remove('hidden');
+            renderPhonePreview();
+        }
+
+        function closeRecipientModal() {
+            document.getElementById('recipient-modal').classList.add('hidden');
+        }
+
+        function getFormattedInviteText() {
+            const selectedActs = ALL_ACTIVITIES.filter(a => state.activities.includes(a.id)).map(a => `${a.icon} ${a.label}`).join(', ');
+            return `💌 ${state.toName}, запрошую тебе на побачення!\n\n✨ Формат: ${state.vibe}\n📅 Коли: ${formatUkrainianDate(state.date)} о ${state.time}\n📍 Де: ${state.place}\n🎶 У програмі: ${selectedActs}\n${state.dressCode ? `💡 Побажання: ${state.dressCode}\n` : ''}\n«${state.message}»\n\nЗ любов'ю, ${state.fromName} ❤️`;
+        }
+
+        // Формування безпечного URL та тексту (уникаємо зламаного URL пісочниці scf.usercontent.goog)
+        function updateShareData() {
+            const textBox = document.getElementById('preview-text-box');
+            if (textBox) {
+                textBox.textContent = getFormattedInviteText();
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    invite: '1',
+                    to: state.toName,
+                    from: state.fromName,
+                    vibe: state.vibe,
+                    msg: state.message,
+                    date: state.date,
+                    time: state.time,
+                    place: state.place,
+                    acts: state.activities.join(','),
+                    dress: state.dressCode
+                });
+
+                const host = window.location.hostname || '';
+                const isSandbox = !host || host.includes('usercontent.goog') || window.location.protocol === 'blob:' || window.location.protocol === 'about:';
+                const baseUrl = isSandbox ? 'https://tvoy-sayt.ua/invite.html' : (window.location.origin + window.location.pathname);
+
+                const input = document.getElementById('share-url-input');
+                if (input) {
+                    input.value = `${baseUrl}?${params.toString()}`;
+                }
+            } catch (e) {}
+        }
+
+        function loadStateFromUrlParams() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('invite') === '1') {
+                    state.toName = params.get('to') || state.toName;
+                    state.fromName = params.get('from') || state.fromName;
+                    state.vibe = params.get('vibe') || state.vibe;
+                    state.message = params.get('msg') || state.message;
+                    state.date = params.get('date') || state.date;
+                    state.time = params.get('time') || state.time;
+                    state.place = params.get('place') || state.place;
+                    if (params.get('acts')) state.activities = params.get('acts').split(',');
+                    state.dressCode = params.get('dress') || '';
+                    openRecipientModal();
+                }
+            } catch (e) {}
+        }
+
+        function copyTextToClipboard(text, toastMessage) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(toastMessage);
+        }
+
+        function copyInviteText() {
+            copyTextToClipboard(getFormattedInviteText(), 'Текст запрошення скопійовано! Надішли його у месенджер ✨');
+        }
+
+        function copyShareLink() {
+            updateShareData();
+            const input = document.getElementById('share-url-input');
+            copyTextToClipboard(input.value, 'URL-посилання скопійовано! 🔗');
+        }
+
+        // Генерація та завантаження повністю автономного HTML-файлу листівки для відправки в Telegram / Viber
+        function downloadStandaloneInvitation() {
+            const selectedActs = ALL_ACTIVITIES.filter(a => state.activities.includes(a.id));
+            const actsBadges = selectedActs.map(a =>
+                `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">${a.icon} ${escapeHtml(a.label)}</span>`
+            ).join(' ');
+
+            const standaloneHTML = `<!DOCTYPE html>
+<html lang="uk">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Запрошення на побачення для Софійко ❤️</title>
+<title>Запрошення на побачення для ${escapeHtml(state.toName)} ❤️</title>
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
@@ -48,19 +934,19 @@
 </head>
 <body>
   <div class="card" id="invite-card">
-    <div class="badge">🍷 Романтична вечеря</div>
-    <h1>Софійко, підемо на <span class="accent">побачення?</span></h1>
-    <p class="msg">«Хочу провести цей вечір тільки з тобою та подарувати тобі найтепліші емоції ✨»</p>
+    <div class="badge">${escapeHtml(state.vibe)}</div>
+    <h1>${escapeHtml(state.toName)}, підемо на <span class="accent">побачення?</span></h1>
+    <p class="msg">«${escapeHtml(state.message)}»</p>
     <div class="details">
-      <div><strong>📅 Коли:</strong> пʼятниця, 30 жовтня о 19:00</div>
-      <div><strong>📍 Де:</strong> Затишний ресторанчик у центрі</div>
-      <div><strong>💡 Побажання:</strong> Одягай те, в чому почуваєшся неперевершено ❤️</div>
+      <div><strong>📅 Коли:</strong> ${formatUkrainianDate(state.date)} о ${escapeHtml(state.time)}</div>
+      <div><strong>📍 Де:</strong> ${escapeHtml(state.place)}</div>
+      ${state.dressCode ? `<div><strong>💡 Побажання:</strong> ${escapeHtml(state.dressCode)}</div>` : ''}
     </div>
     <div style="margin-bottom:16px;">
       <div style="font-size:11px;font-weight:700;color:#80757B;text-transform:uppercase;margin-bottom:6px;">У програмі вечора:</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"><span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">☕ Кава та смаколики</span> <span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">🌙 Вечірній променад</span> <span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">🍝 Смачна вечеря</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">${actsBadges}</div>
     </div>
-    <div style="font-size:12px;font-weight:700;color:#80757B;margin-bottom:10px;">Запрошує: <strong style="color:#2D1926;">Твій Макс ❤️</strong></div>
+    <div style="font-size:12px;font-weight:700;color:#80757B;margin-bottom:10px;">Запрошує: <strong style="color:#2D1926;">${escapeHtml(state.fromName)} ❤️</strong></div>
     <button class="btn-yes" id="yes-btn" onclick="accept()">Так, із задоволенням! ❤️</button>
     <button class="btn-no" id="no-btn" onclick="dodge()">Подумаю 🤔</button>
   </div>
@@ -73,8 +959,76 @@
       document.getElementById('yes-btn').style.transform = 'scale(' + Math.min(1 + count * 0.05, 1.15) + ')';
     }
     function accept() {
-      document.getElementById('invite-card').innerHTML = '<div style="font-size:48px;margin-bottom:10px;">🥰</div><h1>Ура! До зустрічі, Софійко!</h1><p class="msg">Побачення офіційно заплановано на пʼятниця, 30 жовтня о 19:00 ❤️</p><div class="details"><div><strong>📍 Місце:</strong> Затишний ресторанчик у центрі</div><div><strong>💌 Від:</strong> Твій Макс</div></div>';
+      document.getElementById('invite-card').innerHTML = '<div style="font-size:48px;margin-bottom:10px;">🥰</div><h1>Ура! До зустрічі, ${escapeHtml(state.toName)}!</h1><p class="msg">Побачення офіційно заплановано на ${formatUkrainianDate(state.date)} о ${escapeHtml(state.time)} ❤️</p><div class="details"><div><strong>📍 Місце:</strong> ${escapeHtml(state.place)}</div><div><strong>💌 Від:</strong> ${escapeHtml(state.fromName)}</div></div>';
     }
-  </script>
+  <\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([standaloneHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `zaproshennya_${state.toName.toLowerCase().replace(/[^a-zа-яіїєґ0-9]/gi, '_')}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Готову листівку завантажено! Надішли файл у Telegram 💌');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Салют із сердечок на Canvas
+        function launchHeartsConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = Array.from({ length: 48 }, () => ({
+                x: Math.random() * canvas.width,
+                y: canvas.height + Math.random() * 120,
+                size: 18 + Math.random() * 16,
+                speedY: 3.5 + Math.random() * 4,
+                speedX: (Math.random() - 0.5) * 3,
+                emoji: ['❤️', '💖', '💘', '✨', '🥰'][Math.floor(Math.random() * 5)]
+            }));
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y -= p.speedY;
+                    p.x += p.speedX;
+                    ctx.font = `${p.size}px serif`;
+                    ctx.fillText(p.emoji, p.x, p.y);
+                });
+                frame++;
+                if (frame < 130) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+    </script>
 </body>
 </html>
