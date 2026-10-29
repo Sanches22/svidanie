@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Запрошення на побачення для Софійко ❤️</title>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #FFF5F8 0%, #FDFFFF 100%);
+    font-family: 'Comfortaa', sans-serif; color: #2D1926; padding: 16px;
+  }
+  .card {
+    max-width: 400px; width: 100%; background: #fff; border: 8px solid #FBCCDC;
+    border-radius: 40px; padding: 28px 22px; text-align: center;
+    box-shadow: 0 20px 40px rgba(248, 85, 137, 0.12);
+  }
+  .badge {
+    display: inline-block; background: #FFE8EF; color: #F85589;
+    font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 26px;
+    line-height: 1.1; margin: 0 0 10px;
+  }
+  .accent { color: #F85589; }
+  .msg { font-size: 13px; color: #80757B; font-style: italic; margin-bottom: 16px; }
+  .details {
+    background: #FFF7FA; border: 1px solid #FBCCDC; border-radius: 20px;
+    padding: 14px; text-align: left; font-size: 13px; margin-bottom: 16px;
+  }
+  .details div { margin-bottom: 8px; }
+  .details div:last-child { margin-bottom: 0; }
+  .btn-yes {
+    width: 100%; border: none; border-radius: 999px; background: #F85589; color: #fff;
+    font-family: 'Comfortaa', sans-serif; font-weight: 700; font-size: 15px;
+    padding: 15px; cursor: pointer; box-shadow: 0 8px 20px rgba(248, 85, 137, 0.3);
+    transition: transform 0.2s; margin-bottom: 8px;
+  }
+  .btn-no {
+    width: 100%; border: none; border-radius: 999px; background: #E9E6F0; color: #2D1926;
+    font-family: 'Comfortaa', sans-serif; font-weight: 700; font-size: 13px;
+    padding: 12px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="card" id="invite-card">
+    <div class="badge">🍷 Романтична вечеря</div>
+    <h1>Софійко, підемо на <span class="accent">побачення?</span></h1>
+    <p class="msg">«Хочу провести цей вечір тільки з тобою та подарувати тобі найтепліші емоції ✨»</p>
+    <div class="details">
+      <div><strong>📅 Коли:</strong> пʼятниця, 30 жовтня о 19:00</div>
+      <div><strong>📍 Де:</strong> Затишний ресторанчик у центрі</div>
+      <div><strong>💡 Побажання:</strong> Одягай те, в чому почуваєшся неперевершено ❤️</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#80757B;text-transform:uppercase;margin-bottom:6px;">У програмі вечора:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"><span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">☕ Кава та смаколики</span> <span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">🌙 Вечірній променад</span> <span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #FBCCDC;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#2D1926;">🍝 Смачна вечеря</span></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#80757B;margin-bottom:10px;">Запрошує: <strong style="color:#2D1926;">Твій Макс ❤️</strong></div>
+    <button class="btn-yes" id="yes-btn" onclick="accept()">Так, із задоволенням! ❤️</button>
+    <button class="btn-no" id="no-btn" onclick="dodge()">Подумаю 🤔</button>
+  </div>
+  <script>
+    const phrases = ['Точно-точно подумаєш? 🥺','А якщо зі смачним десертом? 🍰','Обіцяю, буде дуже класно! ✨','Натискай рожеву кнопку 👉👈'];
+    let count = 0;
+    function dodge() {
+      count++;
+      document.getElementById('no-btn').textContent = phrases[count % phrases.length];
+      document.getElementById('yes-btn').style.transform = 'scale(' + Math.min(1 + count * 0.05, 1.15) + ')';
+    }
+    function accept() {
+      document.getElementById('invite-card').innerHTML = '<div style="font-size:48px;margin-bottom:10px;">🥰</div><h1>Ура! До зустрічі, Софійко!</h1><p class="msg">Побачення офіційно заплановано на пʼятниця, 30 жовтня о 19:00 ❤️</p><div class="details"><div><strong>📍 Місце:</strong> Затишний ресторанчик у центрі</div><div><strong>💌 Від:</strong> Твій Макс</div></div>';
+    }
+  </script>
+</body>
+</html>
